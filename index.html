@@ -1,20 +1,20 @@
 <html>
-	<head>
-		<title>Random Map Generator - Mishal Zaman</title>
-		<link href='https://fonts.googleapis.com/css?family=EB+Garamond' rel='stylesheet' type='text/css'>
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-		<script src="js/MapGenerator.js"></script>
-		<link rel="stylesheet" type="text/css" href="css/main.css">
-	</head>
-	<body>
-		<h1>Rogue-like Map Generation - Mishal Zaman</h1>
-		<canvas id="monitor"></canvas>
-		<p>movement: w - a - s - d | Refresh page for a new map</p>
-		<script type="text/javascript">
-			var generator = new MapGenerator( 50, 50, 10, 10 );
+    <head>
+        <title>Random Map Generator - Mishal Zaman</title>
+        <link href='https://fonts.googleapis.com/css?family=EB+Garamond' rel='stylesheet' type='text/css'>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+        <script src="js/MapGenerator.js"></script>
+        <link rel="stylesheet" type="text/css" href="css/main.css">
+    </head>
+    <body>
+        <h1>Rogue-like Map Generation - Mishal Zaman</h1>
+        <canvas id="monitor"></canvas>
+        <p>movement: w - a - s - d | Refresh page for a new map</p>
+        <script type="text/javascript">
+            var generator = new MapGenerator( 50, 50, 10, 10 );
 
-			generator.createNewMap();
-			generator.draw();
-		</script>
-	</body>
+            generator.createNewMap();
+            generator.draw();
+        </script>
+    </body>
 </html>
