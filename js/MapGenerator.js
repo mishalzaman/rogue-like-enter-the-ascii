@@ -1,4 +1,5 @@
 /* 
+    Author: Mishal Zaman, https://github.com/mishalzaman
     Class: MapGenerator
     Generates a randoom map based on the number of rows and columns
 
@@ -27,16 +28,20 @@
     SOFTWARE.
 */
 
-function MapGenerator( row, column, width, height ) {
+function MapGenerator( options ) {
     // Map properties
-    this.map = [];
-    this.row = row;
-    this.column = column;
-    this.width = width;
-    this.height = height;
-    this.rooms = [];                                // Size information about each room
+    this.map       = [];
+    this.row       = options.row;
+    this.column    = options.column;
+    this.width     = options.width;
+    this.height    = options.height;
+    this.rooms     = [];    
+    this.roomCount = options.rooms;                            
+    this.minWidth  = options.minWidth;
+    this.maxWidth  = options.maxWidth;
+    this.minHeight = options.minHeight;
+    this.maxHeight = options.maxHeight;
     this.playerPos = {'column' : 0, 'row' : 0};
-    this.monsters = [];                             // Monster information
 
     // tiles
     this.EARTH = 0;
@@ -45,7 +50,6 @@ function MapGenerator( row, column, width, height ) {
     this.WALL = 3;
     this.PATH = 4;
     this.PLAYER = 5;
-    this.MONSTER = 6;
     this.ITEM = 7;
 
     // Canvas
@@ -66,9 +70,9 @@ MapGenerator.prototype = {
     createNewMap:function() {
         this._addGround();
         this._addRooms();
+        this._sortRoomsByDistance();
         this._addRoomConnections();
         this._addPlayer();
-        this._addMonsters();
     },
 
     draw:function() {
@@ -100,9 +104,6 @@ MapGenerator.prototype = {
                     case this.PLAYER :
                         color = '#73241D';
                         character = '@';
-                        break;
-                    case this.MONSTER :
-                        character = '%';
                         break;
 
                 }
@@ -153,8 +154,6 @@ MapGenerator.prototype = {
                 break;
         }
 
-        this._updateMonsterPosition();
-
         this.clear();
         this.draw();
     },
@@ -185,7 +184,7 @@ MapGenerator.prototype = {
     },
 
     _addRooms:function() {
-        var maxRooms = 6;
+        var maxRooms = this.roomCount;
         var rooms = 0;
 
         while( rooms < maxRooms ) {
@@ -203,11 +202,14 @@ MapGenerator.prototype = {
                Basically a room validation for no intersection.
             */
             while( foundNonIntersect == false ) {
+                console.log(this.maxHeight, minHeight, maxWidth, minWidth);
                 rndR = Math.floor(Math.random() * (this.row - 1) + 1);
                 rndC = Math.floor(Math.random() * (this.column - 1) + 1);
 
-                roomWidth = Math.floor(Math.random() * (15 - 8) + 8);
-                roomHeight = Math.floor(Math.random() * (15 - 8) + 8);
+                roomWidth = Math.floor(Math.random() * (this.maxWidth - this.minWidth + 1) + this.minWidth);
+                roomHeight = Math.floor(Math.random() * (this.maxHeight - this.minHeight + 1) + this.minHeight);
+
+                console.info("map w/h: " + rooms + " = " + roomWidth + " w - " + roomHeight + " h");
 
                 var hasIntersect = false;
 
@@ -219,18 +221,11 @@ MapGenerator.prototype = {
 
                     for( var j = 0; j < roomWidth; j++ ) {
 
-                        // check if room isn't outside the bounds of the map
-                        if( ( column + 1 ) >= this.column ) {
-                            hasIntersect = true;
-                            break;
-                        }
-
-                        if( ( row + 1 ) >= this.row ) {
-                            hasIntersect = true;
-                            break;
-                        }
-
-                        if( this.map[column][row] == this.WALL || this.map[column][row] == this.FLOOR ) {
+                        if( ( column + 1 ) >= this.column ||        // outside bounds of map area columns
+                            ( row + 1 ) >= this.row  ||             // outside bounds of map area rows
+                            this.map[column][row] == this.WALL ||   // next block is a wall
+                            this.map[column][row] == this.FLOOR ) { // next block is a floor
+                            
                             hasIntersect = true;
                             break;
                         }
@@ -288,8 +283,14 @@ MapGenerator.prototype = {
         }
     },
 
+    _sortRoomsByDistance:function() {
+        var rooms = this.rooms;
+    },
+
     _addRoomConnections:function() {
         var rooms = this.rooms;
+
+        console.log(this.rooms);
 
         for( var i = 0; i < rooms.length; i++ ) {
             if( typeof rooms[i+1] == 'undefined') {
@@ -370,67 +371,11 @@ MapGenerator.prototype = {
         this.playerPos.row = room.row+1;
     },
 
-    _addMonsters:function() {
-        for( var i = 0; i < this.rooms.length; i++ ) {
-            var room = this.rooms[i];
-            var column = Math.floor(Math.random() * ( room.width-1 )) + ( room.column+1 );
-            var row = Math.floor(Math.random() * ( room.height-1 )) + ( room.row+1 );
-
-            this.map[column][row] = this.MONSTER;
-
-            this.monsters[i] = {
-                'column' : column,
-                'row' : row
-            }
-        }
-    },
-
     _updatePlayerPosition:function( column, row ) {
         this.map[this.playerPos.column][this.playerPos.row] = this.FLOOR;
         this.map[column][row] = this.PLAYER;
         this.playerPos.column = column;
         this.playerPos.row = row;
-    },
-
-    _updateMonsterPosition:function() {
-        for( var i = 0; i < this.monsters.length; i++ ) {
-            var monster = this.monsters[i];
-            var dir = Math.floor(Math.random() * 4) + 1;
-            this.map[monster.column][monster.row] = this.FLOOR;
-            switch(dir) {
-                case 1 :
-                    if( this._noCollision(monster.column, monster.row-1) ) {
-                        this.map[monster.column][monster.row-1] = this.MONSTER;
-                        this._updateMonsterList(i, monster.column, monster.row-1);
-                    }
-                    break;
-                case 2 :
-                    if( this._noCollision(monster.column+1, monster.row) ) {
-                        this.map[monster.column+1][monster.row] = this.MONSTER;
-                        this._updateMonsterList(i, monster.column+1, monster.row);
-                    }
-                    break;
-                case 3 :
-                    if( this._noCollision(monster.column, monster.row+1) ) {
-                        this.map[monster.column][monster.row+1] = this.MONSTER;
-                        this._updateMonsterList(i, monster.column, monster.row+1);
-                    }
-                    break;
-                case 4 :
-                    if( this._noCollision(monster.column-1, monster.row) ) {
-                        this.map[monster.column-1][monster.row] = this.MONSTER;
-                        this._updateMonsterList(i, monster.column-1, monster.row);
-                    }
-                    break;
-            }
-        }
-    },
-
-    _updateMonsterList:function( index, column, row ) {
-        this.monsters[index] = {
-            'column' : column,
-            'row' : row
-        }
     },
 
     _noCollision:function( column, row ) {

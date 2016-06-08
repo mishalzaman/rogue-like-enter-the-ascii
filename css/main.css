@@ -2,23 +2,7 @@ body {
     padding: 0px;
     margin: 0px;
     height: 100%;
-    background: #000;
-}
-
-h1 {
-    font-size: 14px;
-    text-align: center;
-    font-family: 'EB Garamond', serif;
-    padding: 20px;
-    background: #fff;
-    border-bottom: 1px dotted #fff;
-}
-
-p {
-    text-align: center;
-    color: #fff;
-    font-size: 14px;
-    font-family: 'EB Garamond', serif;
+    position: relative;
 }
 
 canvas {
@@ -26,6 +10,13 @@ canvas {
 }
 
 #monitor {
-    margin: 20px auto 0px;
+    margin-left: 20px;
+}
+
+#control-panel {
+    position: absolute;
+    width: 400px;
+    right: 10px;
+    top: 10px;
 }
 
