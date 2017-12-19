@@ -2,7 +2,7 @@
 
 Creating a rogue-like adventure through random map generation. 
 
-[rogue-like-enter-the-ascii] (http://mishalzaman.github.io/rogue-like-enter-the-ascii/)
+[rogue-like-enter-the-ascii](http://mishalzaman.github.io/rogue-like-enter-the-ascii/)
 
 ## To-do List
 
