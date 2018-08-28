@@ -27,34 +27,26 @@
     SOFTWARE.
 */
 
-function MapGenerator( row, column, width, height ) {
+function MapGenerator( row, column, tileWidth, tileHeight ) {
     // Map properties
     this.map = [];
     this.row = row;
     this.column = column;
-    this.width = width;
-    this.height = height;
+    this.tileWidth = tileWidth;
+    this.tileHeight = tileHeight;
     this.rooms = [];
-    this.playerPos = {'column' : 0, 'row' : 0};
     this.monsters = [];
 
     // tiles
     this.EARTH = 0;
     this.FLOOR = 1;
-    this.DOOR = 2;
     this.WALL = 3;
-    this.PATH = 4;
-    this.PLAYER = 5;
-    this.MONSTER = 6;
 
     // Canvas
     this.canvas;
     this.context;
 
     this._setCanvas();
-
-    // Event listener for player movement
-    window.addEventListener('keypress', this.movePlayer.bind(this));
 }
 
 MapGenerator.prototype = {
@@ -66,7 +58,6 @@ MapGenerator.prototype = {
         this._addGround();
         this._addRooms();
         this._addRoomConnections();
-        this._addPlayer();
     },
 
     draw:function() {
@@ -95,20 +86,15 @@ MapGenerator.prototype = {
                     case this.PATH :
                         color = '#00AABB';
                         break;
-                    case this.PLAYER :
-                        color = '#73241D';
-                        character = '@';
-                        break;
-
                 }
 
                 if( this.map[i][j] == this.WALL ) {
                     this.context.fillStyle = color;
-                    this.context.fillRect( ( i * this.width ), ( j * this.height ), this.width, this.height );
+                    this.context.fillRect( ( i * this.tileWidth ), ( j * this.tileHeight ), this.tileWidth, this.tileHeight );
                 }
 
                 this.context.fillStyle = '#fff';
-                this.context.fillText( character , i * this.width+2, j * this.height+10);
+                this.context.fillText( character , i * this.tileWidth+2, j * this.tileHeight+10);
             }
         }
     },
@@ -118,46 +104,12 @@ MapGenerator.prototype = {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     },
 
-    movePlayer:function( e ) {
-        var player = this.playerPos;
-
-        switch( e.keyCode ) {
-            case 87:
-            case 119: // w
-                if ( this._noCollision( player.column, player.row-1 ) ) {
-                    this._updatePlayerPosition( player.column, player.row-1 );
-                }
-                break;
-            case 68:
-            case 100: // d
-                if ( this._noCollision( player.column+1, player.row ) ) {
-                    this._updatePlayerPosition( player.column+1, player.row );
-                }
-                break;
-            case 83:
-            case 115: // s
-                if ( this._noCollision( player.column, player.row+1 ) ) {
-                    this._updatePlayerPosition( player.column, player.row+1 );
-                }
-                break;
-            case 65:
-            case 97: // a
-                if ( this._noCollision( player.column-1, player.row ) ) {
-                    this._updatePlayerPosition( player.column-1, player.row );
-                }
-                break;
-        }
-
-        this.clear();
-        this.draw();
-    },
-
     // Private
 
     _setCanvas:function() {
         this.canvas = document.getElementById('monitor');
-        this.canvas.width = ( this.row * this.width );
-        this.canvas.height = ( this.column * this.height );
+        this.canvas.width = ( this.row * this.tileWidth );
+        this.canvas.height = ( this.column * this.tileHeight );
         this.context = this.canvas.getContext('2d');
     },
 
@@ -178,8 +130,14 @@ MapGenerator.prototype = {
     },
 
     _addRooms:function() {
-        var maxRooms = 6;
         var rooms = 0;
+        var minSize = 3
+        var minRoomWidth = Math.floor((this.column / minSize) / minSize)
+        var maxRoomWidth = Math.floor(this.column / minSize)
+        var minRoomHeight = Math.floor((this.row / minSize) / minSize)
+        var maxRoomHeight = Math.floor(this.row / minSize)
+        var maxRooms = Math.floor((this.row * this.column)/(maxRoomWidth*maxRoomHeight))
+        console.log(maxRooms)
 
         while( rooms < maxRooms ) {
             var rndC = 0;
@@ -188,7 +146,7 @@ MapGenerator.prototype = {
             var roomHeight = 0;
             var foundNonIntersect = false;
 
-            /* This first while process tests if the randomised
+            /* This first WHILE process tests if the randomised
                start location of the room (rncC and rndR) and the 
                randomised width and height of that room can be created
                without it intersecting with any other existing room.
@@ -196,18 +154,21 @@ MapGenerator.prototype = {
                Basically a room validation for no intersection.
             */
             while( foundNonIntersect == false ) {
-                rndR = Math.floor(Math.random() * (this.row - 1) + 1);
-                rndC = Math.floor(Math.random() * (this.column - 1) + 1);
+                // Create a random starting point for row and column
+                randomRow = Math.floor(Math.random() * (this.row - 1) + 1);
+                randomColumn = Math.floor(Math.random() * (this.column - 1) + 1);
 
-                roomWidth = Math.floor(Math.random() * (15 - 8) + 8);
-                roomHeight = Math.floor(Math.random() * (15 - 8) + 8);
+                // Create a random width and height of the room
+                roomWidth = Math.floor(Math.random() * (maxRoomWidth - minRoomWidth) + minRoomWidth);
+                roomHeight = Math.floor(Math.random() * (maxRoomHeight - minRoomHeight) + minRoomHeight);
 
                 var hasIntersect = false;
 
-                var rndRTemp = rndR;
+                var rndRTemp = randomRow;
 
+                // Test to check if the new room will not have any intersections
                 for( var i = 0; i < roomHeight; i++ ) {
-                    var column = rndC;
+                    var column = randomColumn;
                     var row = rndRTemp++;
 
                     for( var j = 0; j < roomWidth; j++ ) {
@@ -223,11 +184,12 @@ MapGenerator.prototype = {
                             break;
                         }
 
+                        // Check if room is intersecting with a wall or floor
                         if( this.map[column][row] == this.WALL || this.map[column][row] == this.FLOOR ) {
                             hasIntersect = true;
                             break;
                         }
-                        
+
                         column++; // increment the column
                     }
 
@@ -242,13 +204,13 @@ MapGenerator.prototype = {
             }
 
             // Find a center point for the room
-            var centerCol = Math.floor( rndC + ( roomWidth * 0.5 ));
-            var centerRow = Math.floor( rndR + ( roomHeight * 0.5 ));
+            var centerCol = Math.floor( randomColumn + ( roomWidth * 0.5 ));
+            var centerRow = Math.floor( randomRow + ( roomHeight * 0.5 ));
 
             // Add the validated room to the list of rooms
             this.rooms[rooms] = { 
-                'column' : rndC, 
-                'row' : rndR, 
+                'column' : randomColumn, 
+                'row' : randomRow, 
                 'centerCol' : centerCol,
                 'centerRow' : centerRow,
                 'width' : roomWidth, 
@@ -259,8 +221,8 @@ MapGenerator.prototype = {
                Now we can add this to this.map
             */
             for( var i = 0; i <= roomHeight; i++ ) {
-                var column = rndC;
-                var row = rndR++; // post operator to increment to rows
+                var column = randomColumn;
+                var row = randomRow++; // post operator to increment to rows
 
                 hasDoor = false;
 
@@ -353,28 +315,4 @@ MapGenerator.prototype = {
             this.map[column-1][row] = this.WALL;
         }
     },
-
-    _addPlayer:function() {
-        // Select a random room
-        var room = this.rooms[Math.floor(Math.random()*this.rooms.length)];
-
-        this.map[room.column+1][room.row+1] = this.PLAYER;
-        this.playerPos.column = room.column+1;
-        this.playerPos.row = room.row+1;
-    },
-
-    _updatePlayerPosition:function( column, row ) {
-        this.map[this.playerPos.column][this.playerPos.row] = this.FLOOR;
-        this.map[column][row] = this.PLAYER;
-        this.playerPos.column = column;
-        this.playerPos.row = row;
-    },
-
-    _noCollision:function( column, row ) {
-        if( this.map[column][row] == this.WALL ) {
-            return false;
-        }
-
-        return true;
-    }
 }
